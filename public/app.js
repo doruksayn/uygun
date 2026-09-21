@@ -18,7 +18,7 @@ function render() {
   $('friend-avatar').textContent = (friend?.display_name || 'Arkadaşın').slice(0,1);
   $('friend-status').textContent = !friend ? 'Henüz durum yok' : friend.available ? 'Şu an uygun' : 'Şu an uygun değil';
   $('friend-indicator').classList.toggle('available',!!friend?.available);
-  $('friend-note').textContent = friend?.available ? 'Tam zamanı. Bir merhaba demeye ne dersin?' : 'Uygun olduğunda burada göreceksin.';
+  $('friend-note').textContent = friend?.available ? 'Müsaitmiş. Oyuna ya da DC’ye çağır.' : 'Uygun olduğunda burada göreceksin.';
   $('friend-time').textContent = stamp(friend?.updated_at);
 }
 async function refresh() {
