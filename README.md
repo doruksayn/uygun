@@ -4,7 +4,7 @@
 
 ## Durum
 
-İlk sürümün kaynak kodu hazır. Supabase bağlanmadığında açıkça işaretlenmiş, geçici bir önizleme açılır. Önizleme gerçek veri kaydetmez, başka cihazlarla eşitlemez veya bildirim göndermez. Canlı kurulum ve iki fiziksel cihazla bildirim testi ayrıca tamamlanmalıdır.
+Canlı uygulama: https://doruksayn.github.io/uygun/ — GitHub Pages dağıtımı başarılı. Supabase şeması, iki üyelik sınırı, kapalı kayıt ve bildirim fonksiyonu kuruldu. Gizli bildirim anahtarları Supabase Secrets içinde; frontend yalnızca public anahtarlar kullanır. İki fiziksel telefonda push teslimat testi ayrıca yapılmalıdır. Yerelde ayar verilmezse açıkça işaretli bir tasarım önizlemesi açılır; bu mod veri paylaşmaz veya bildirim göndermez.
 
 ## Yerelde çalıştır
 
@@ -79,4 +79,6 @@ Yerelde canlı modu denemek için `public/config.js` içindeki üç PUBLIC alan�
 - Oturumsuz istek, üçüncü kullanıcı, başka kullanıcı kimliği gönderen istek reddedilmeli.
 - İnternet kesilince hatalı başarı gösterilmemeli; yeniden açılınca güncel durum alınmalı.
 
-Mevcut otomatik testler: durum girdisi doğrulama, push endpoint güvenlik sınırı. RLS ve gerçek push teslimatı canlı proje kurulmadan doğrulanmış sayılmaz.
+Doğrulananlar: yerel ve CI testleri, başarılı Pages dağıtımı, canlı giriş, iki açık tarayıcı sekmesinde yenilemesiz eşitleme ve kalıcı durum, anonim veri okuma ve fonksiyon erişiminin reddi, CORS, kapalı kayıt. `tests/access.sql` canlı veritabanında çalıştırıldı: iki üyenin birbirini görmesi, dış kullanıcının veri görememesi ve ayrıcalıklı RPC erişiminin kapalı olması doğrulandı. Telefon bildiriminin gerçek teslimatı henüz doğrulanmadı.
+
+
