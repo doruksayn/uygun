@@ -1,8 +1,9 @@
+self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
+self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
 self.addEventListener('push', event => {
   let data = {};
   try { data = event.data?.json() || {}; } catch {}
   event.waitUntil(self.registration.showNotification(data.title || 'Arkadaşın uygun!', {
-    body: data.body || 'Birlikte zaman geçirmek için uygulamayı aç.',
     icon: new URL('icon-192.png', self.registration.scope).href,
     tag: 'uygun-status', data: { url: self.registration.scope }
   }));
