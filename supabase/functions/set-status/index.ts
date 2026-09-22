@@ -35,7 +35,7 @@ Deno.serve(async(req: Request) => {
       const results=await Promise.allSettled(subs.map(async sub=>{
         if(!trustedPushEndpoint(sub.endpoint) || sub.subscription?.endpoint!==sub.endpoint) throw Error('Untrusted endpoint');
         try {
-          await webpush.sendNotification(sub.subscription,JSON.stringify({title:`${change.name} şu an uygun!`,body:'Birlikte zaman geçirmek için uygulamayı aç.'}),{TTL:300,timeout:8000,vapidDetails:{subject,publicKey,privateKey}});
+          await webpush.sendNotification(sub.subscription,JSON.stringify({title:`${change.name} şu an ${available ? 'uygun!' : 'uygun değil!'}`}),{TTL:300,timeout:8000,vapidDetails:{subject,publicKey,privateKey}});
         } catch(e) {
           if(e.statusCode===404 || e.statusCode===410) {
             await admin.from('push_subscriptions').delete().eq('user_id',sub.user_id).eq('endpoint',sub.endpoint);
