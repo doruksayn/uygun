@@ -3,3 +3,6 @@ project_id = "uygun"
 # Authentication is performed explicitly with auth.getUser(token) before any access.
 # This supports projects with asymmetric signing keys as well as legacy keys.
 verify_jwt = false
+
+[functions.remind-available]
+verify_jwt = false
