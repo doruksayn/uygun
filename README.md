@@ -54,6 +54,10 @@ supabase functions deploy set-status
 8. Settings → Pages → Source olarak GitHub Actions seç. Actions'tan Publish Uygun akışını çalıştır veya main'e push yap. Eksik değişkenlerle akış bilerek hata verir; yanlışlıkla demo yayınlamaz.
 9. Beklenen adres: https://doruksayn.github.io/uygun/ (ancak başarılı dağıtımdan sonra açılır).
 
+### İki saatlik hatırlatma
+
+`supabase/migrations/202610010001_available_reminders.sql` dosyasını çalıştır, `remind-available` Edge Function'ını yayınla ve Supabase Edge Function Secrets'e rastgele güçlü bir `REMINDER_TOKEN` ekle. Aynı token'ı, proje URL'sini ve uygulamanın public API key'ini Supabase Vault'ta sırasıyla `reminder_token`, `project_url` ve `publishable_key` adlarıyla sakla. Son olarak `supabase/schedule-reminders.sql` dosyasını bir kez SQL Editor'de çalıştır. Cron her 5 dakikada bir iki saati dolmuş `uygun` durumlarını kontrol eder; hatırlatma kişinin kendi kayıtlı cihazlarına gider.
+
 Yerelde canlı modu denemek için `public/config.js` içindeki üç PUBLIC alanı doldur veya ortam değişkenlerini tanımlayıp build al. Özel anahtarları hiçbir zaman bu dosyaya yazma. `.env` dosyaları otomatik okunmaz; build ortam değişkenlerini kullanır.
 
 ## Güvenlik ve davranış
@@ -64,6 +68,7 @@ Yerelde canlı modu denemek için `public/config.js` içindeki üç PUBLIC alan�
 - Bildirim abonelikleri yalnızca sahipleri tarafından okunup değiştirilebilir.
 - Bildirim yalnızca false → true geçişinde denenir. Aynı değerin tekrar gönderilmesi yeni bildirim üretmez. Sunucu kilidi ve 60 saniyelik aralık hızlı tekrarları sınırlar.
 - Bildirim gönderimi başarısız olsa da kaydedilen durum korunur. İlk sürüm otomatik bildirim yeniden deneme kuyruğu içermez; UI gönderim hatasını bildirir.
+- `Uygunum` iki saat açık kalırsa kişinin kendi cihazına `Uygun musun?` hatırlatması gönderilir; hatırlatma aralığı tekrar iki saattir.
 - Geçersiz push abonelikleri temizlenir; sunucu yalnızca bilinen HTTPS push servislerine istek gönderir.
 - Çıkış, hesabın tüm cihazlardaki bildirim aboneliklerini siler. Diğer cihazlarda gerekirse kapat/aç yaparak tekrar etkinleştir.
 - Çevrimdışıyken durum değiştirilemez; gösterilen bilgi son alınan durumdur. Ekrana dönüşte ve 30 saniyede bir veri yeniden alınır.
@@ -80,5 +85,3 @@ Yerelde canlı modu denemek için `public/config.js` içindeki üç PUBLIC alan�
 - İnternet kesilince hatalı başarı gösterilmemeli; yeniden açılınca güncel durum alınmalı.
 
 Doğrulananlar: yerel ve CI testleri, başarılı Pages dağıtımı, canlı giriş, iki açık tarayıcı sekmesinde yenilemesiz eşitleme ve kalıcı durum, anonim veri okuma ve fonksiyon erişiminin reddi, CORS, kapalı kayıt. `tests/access.sql` canlı veritabanında çalıştırıldı: iki üyenin birbirini görmesi, dış kullanıcının veri görememesi ve ayrıcalıklı RPC erişiminin kapalı olması doğrulandı. Telefon bildiriminin gerçek teslimatı henüz doğrulanmadı.
-
-
