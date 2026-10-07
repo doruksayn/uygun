@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.remind-available]
 verify_jwt = false
+
+[functions.poke]
+verify_jwt = false

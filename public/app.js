@@ -1,9 +1,14 @@
 const $ = id => document.getElementById(id);
 const cfg = window.UYGUN_CONFIG || {};
 const demo = !cfg.supabaseUrl || !cfg.supabaseKey;
-let db, user, rows = [], busy = false, channel, refreshTimer;
+let db, user, rows = [], busy = false, channel, refreshTimer, cooldownTimer, cooldownUntil = 0;
 const message = text => { $('message').textContent = text; };
 const stamp = value => value ? `Son değişiklik: ${new Date(value).toLocaleString('tr-TR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}` : 'Henüz güncellenmedi';
+function renderPoke() {
+  const seconds = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
+  $('poke').disabled = busy || seconds > 0 || !navigator.onLine;
+  $('poke-countdown').textContent = seconds ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}` : 'Dürt';
+}
 function render() {
   const mine = rows.find(r => r.user_id === user?.id);
   const friend = rows.find(r => r.user_id !== user?.id);
@@ -20,18 +25,24 @@ function render() {
   $('friend-indicator').classList.toggle('available',!!friend?.available);
   $('friend-note').textContent = friend?.available ? 'Müsaitmiş. Oyuna ya da DC’ye çağır.' : 'Uygun olduğunda burada göreceksin.';
   $('friend-time').textContent = stamp(friend?.updated_at);
+  renderPoke();
 }
 async function refresh() {
   if (!user || demo) return;
-  const {data,error} = await db.from('members').select('user_id,display_name,available,updated_at');
+  const [{data,error},{data:cooldown}] = await Promise.all([
+    db.from('members').select('user_id,display_name,available,updated_at'),
+    db.from('poke_cooldowns').select('last_poked_at').eq('user_id',user.id).maybeSingle()
+  ]);
   if (error) { $('connection').textContent='Bağlantı sorunu'; throw error; }
   if (!user) return;
+  cooldownUntil = cooldown?.last_poked_at ? new Date(cooldown.last_poked_at).getTime() + 15 * 60_000 : 0;
   rows = data || []; render();
   if (!rows.find(r => r.user_id === user.id)) message('Hesabın henüz bu ikiliye eklenmemiş. Kurulumu yapan kişiyle görüş.');
 }
 async function setSession(session) {
   if (channel) { await db.removeChannel(channel); channel = null; }
   clearInterval(refreshTimer);
+  clearInterval(cooldownTimer);
   user = session?.user; rows = [];
   $('login').hidden = !!user; $('dashboard').hidden = !user;
   if (!user) { $('connection').textContent='Özel alan'; return; }
@@ -41,6 +52,7 @@ async function setSession(session) {
     if(state === 'SUBSCRIBED') refresh().catch(()=>{});
   });
   refreshTimer = setInterval(()=>refresh().catch(()=>{}),30000);
+  cooldownTimer = setInterval(renderPoke,1000);
   await updatePushLabel();
 }
 $('login-form').addEventListener('submit', async event => {
@@ -58,6 +70,32 @@ $('toggle').addEventListener('click', async () => {
     else { const {data,error}=await db.functions.invoke('set-status',{body:{available:!mine.available}}); if(error) throw error; await refresh(); message(data?.push === 'failed' ? 'Durumun kaydedildi; bildirim gönderilemedi.' : ''); }
   } catch { message('Durum kaydedilemedi. Bağlantını kontrol edip tekrar dene.'); }
   finally { busy=false; render(); }
+});
+$('poke').addEventListener('click', async () => {
+  if (busy || cooldownUntil > Date.now()) return;
+  $('poke-control').classList.remove('ringing');
+  void $('poke-control').offsetWidth;
+  $('poke-control').classList.add('ringing');
+  setTimeout(()=>$('poke-control').classList.remove('ringing'),900);
+  busy=true; renderPoke();
+  try {
+    if (demo) {
+      cooldownUntil=Date.now()+15*60_000;
+      message('Önizleme: dürtme denendi. Canlı modda arkadaşına bildirim gider.');
+    } else {
+      const {data,error}=await db.functions.invoke('poke',{body:{}});
+      if(error) throw error;
+      if(data.cooldown) {
+        cooldownUntil=new Date(data.next_available_at).getTime();
+        message('Dürtmek için biraz bekle.');
+        return;
+      }
+      cooldownUntil=new Date(data.next_available_at).getTime();
+      message(data.push==='sent' ? 'Arkadaşına dürtme bildirimi gönderildi.' : data.push==='no_subscriptions' ? 'Dürtme kaydedildi; arkadaşının bu cihazda bildirimleri açık değil.' : 'Dürtme kaydedildi ama bildirim gönderilemedi.');
+    }
+  } catch {
+    message('Dürtme gönderilemedi. Bağlantını kontrol edip tekrar dene.');
+  } finally { busy=false; renderPoke(); }
 });
 async function updatePushLabel() {
   if(demo || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
@@ -104,7 +142,7 @@ async function start() {
   if('serviceWorker' in navigator) await navigator.serviceWorker.register('./sw.js');
   if(demo) {
     user={id:'preview-me'}; rows=[{user_id:user.id,display_name:'Sen',available:false},{user_id:'preview-friend',display_name:'Arkadaşın',available:false}];
-    $('dashboard').hidden=false; $('connection').textContent='Tasarım önizlemesi'; message('Önizleme modu · Butonu deneyebilirsin. Durumlar paylaşılmaz ve bildirim gönderilmez.'); render(); return;
+    $('dashboard').hidden=false; $('connection').textContent='Tasarım önizlemesi'; message('Önizleme modu · Butonları deneyebilirsin. Durumlar paylaşılmaz ve bildirim gönderilmez.'); render(); cooldownTimer=setInterval(renderPoke,1000); return;
   }
   const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2.57.4');
   db=createClient(cfg.supabaseUrl,cfg.supabaseKey);

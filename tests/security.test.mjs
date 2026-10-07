@@ -15,3 +15,13 @@ test('both availability states have a notification title',()=>{
   const source=readFileSync(new URL('../supabase/functions/set-status/index.ts',import.meta.url),'utf8');
   assert.match(source,/available \? 'uygun!' : 'uygun değil!'/);
 });
+test('pokes enforce a database cooldown and notify only after membership verification',()=>{
+  const migration=readFileSync(new URL('../supabase/migrations/202610080001_pokes.sql',import.meta.url),'utf8');
+  const endpoint=readFileSync(new URL('../supabase/functions/poke/index.ts',import.meta.url),'utf8');
+  assert.match(migration,/interval '15 minutes'/);
+  assert.match(migration,/last_poked_at <= now\(\) - interval '15 minutes'/);
+  assert.match(migration,/using \(user_id = \(select auth\.uid\(\)\)/);
+  assert.ok(endpoint.indexOf('admin.auth.getUser(token)') < endpoint.indexOf("admin.rpc('claim_poke'"));
+  assert.match(endpoint,/trustedPushEndpoint\(sub\.endpoint\)/);
+  assert.match(endpoint,/seni dürtüyor!/);
+});

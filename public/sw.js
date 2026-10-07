@@ -5,7 +5,7 @@ self.addEventListener('push', event => {
   try { data = event.data?.json() || {}; } catch {}
   event.waitUntil(self.registration.showNotification(data.title || 'Arkadaşın uygun!', {
     icon: new URL('icon-192.png', self.registration.scope).href,
-    tag: 'uygun-status', data: { url: self.registration.scope }
+    tag: data.tag || 'uygun-status', data: { url: self.registration.scope }
   }));
 });
 self.addEventListener('notificationclick', event => {
