@@ -1,4 +1,4 @@
-name: Publish Uygun
+name: Publish UYGUN
 on:
   push:
     branches: [main]

@@ -1,33 +1,54 @@
-# Uygun
+<div align=center>
+  <a href=https://doruksayn.github.io/UYGUN/><img src=./public/icon-512.png alt=UYGUN width=112 /></a>
+  <h1>UYGUN</h1>
+  <p><strong>Hazır olduğunu tek dokunuşla haber ver.</strong></p>
+  <p>İki arkadaş için uygunluk paylaşımı. Durumunu değiştir, arkadaşını dürt, planı başlat.</p>
+  <a href=https://doruksayn.github.io/UYGUN/>Uygulamayı aç</a> &nbsp;·&nbsp; <a href=https://github.com/doruksayn/UYGUN>Kaynak kodu</a>
+  <br /><br />
+  <a href=https://github.com/doruksayn/UYGUN/actions/workflows/pages.yml><img src=https://github.com/doruksayn/UYGUN/actions/workflows/pages.yml/badge.svg alt=Deployment /></a>
+</div>
 
-İki kişi için mobil uyumlu uygunluk uygulaması. Bir dokunuşla durum değiştir; arkadaşın uygun olduğunda web bildirimi al.
+## Neler yapar?
 
-## Durum
-
-Canlı uygulama: https://doruksayn.github.io/uygun/ — GitHub Pages dağıtımı başarılı. Supabase şeması, iki üyelik sınırı, kapalı kayıt ve bildirim fonksiyonu kuruldu. Gizli bildirim anahtarları Supabase Secrets içinde; frontend yalnızca public anahtarlar kullanır. İki fiziksel telefonda push teslimat testi ayrıca yapılmalıdır. Yerelde ayar verilmezse açıkça işaretli bir tasarım önizlemesi açılır; bu mod veri paylaşmaz veya bildirim göndermez.
+| Özellik | Açıklama |
+|---|---|
+| **Durum paylaşımı** | İki kişi birbirinin uygun olup olmadığını anlık görür. Durum değişince arkadaşına bildirim gider. |
+| **Dürtme** | Arkadaşına `BIZZLATTI` bildirimi gönderir. Tekrar dürtmek için 15 dakika beklenir. |
+| **Web bildirimleri** | Bildirimler cihaz başına açılıp kapatılır. |
+| **Hatırlatma** | İsteğe bağlı kurulumla, iki saattir uygun görünen kişiye hatırlatma gönderilir. |
+| **Telefon desteği** | Ana ekrana eklenebilen, mobil uyumlu bir web uygulaması. |
 
 ## Yerelde çalıştır
 
-Node.js 22 veya üzeri yeterli; yerel önizleme için npm install gerekmez.
+Node.js 22 veya üstü yeterli; bağımlılık kurmadan önizlemeyi aç:
 
 ```sh
 node scripts/serve.mjs
 ```
 
-http://127.0.0.1:4173 adresini aç. Kaynaklar `public/` içindedir. Supabase istemcisi canlı modda sürümü sabitlenmiş ESM CDN'den yüklenir. Yazı tipleri Google Fonts'tan gelir; sistem fontu yedeği vardır.
+Ardından <http://127.0.0.1:4173> adresini aç. Supabase ayarı yoksa uygulama veri paylaşmayan önizleme modunda çalışır.
 
-```sh
-node --test
-node scripts/build.mjs
-node scripts/serve.mjs --dist
-```
+| Komut | İşlev |
+|---|---|
+| `node --test` | Yerel testleri çalıştırır. |
+| `node scripts/build.mjs` | `dist/` altında dağıtım çıktısını oluşturur. |
+| `node scripts/serve.mjs --dist` | Derlenen çıktıyı yerelde açar. |
 
-## Canlı kurulum
+## Supabase ve GitHub Pages kurulumu
 
-1. Supabase'te bir proje oluştur. Database şifresini güvenli bir yerde sakla; repoya veya sohbete koyma.
-2. SQL Editor'de `supabase/migrations/202609220001_initial.sql` dosyasını bir kez çalıştır.
-3. Authentication ayarlarında yeni kullanıcı kaydını kapat. Users ekranında yalnızca iki kullanıcı oluştur. Her kullanıcı kendi güçlü şifresini güvenli yoldan belirlesin; gerçek şifreleri kaynak kodda tutma.
-4. SQL Editor'de aşağıdaki örnekte UUID ve isimleri kendi iki kullanıcınla değiştir. Bu gerçek kullanıcı bilgileri repoya kaydedilmemelidir.
+### Supabase
+
+1. Supabase projesi oluştur, yeni kullanıcı kayıtlarını kapat ve yalnızca iki kullanıcı ekle.
+2. SQL Editor'de `supabase/migrations/` içindeki dosyaları tarih sırasıyla çalıştır:
+
+| Migration | İçerik |
+|---|---|
+| `202609220001_initial.sql` | Üyeler, bildirim abonelikleri ve erişim kuralları. |
+| `202609220002_notify_both_states.sql` | Durum değişikliklerinde bildirim. |
+| `202610010001_available_reminders.sql` | İki saatlik hatırlatma altyapısı. |
+| `202610080001_pokes.sql` | Dürtme ve 15 dakikalık bekleme süresi. |
+
+3. `public.members` tablosuna iki kullanıcıyı ekle. UUID'leri Supabase Auth kayıtlarından al:
 
 ```sql
 insert into public.members (user_id, slot, display_name) values
@@ -35,53 +56,52 @@ insert into public.members (user_id, slot, display_name) values
   ('SECOND_AUTH_USER_UUID', 2, 'İkinci kişi');
 ```
 
-5. `node scripts/generate-vapid.mjs` çalıştır. Bildirim anahtarları Git tarafından yok sayılan `.env.push` dosyasına yazılır. Özel anahtar yalnızca Supabase Edge Function secrets alanında kalmalı.
-6. Supabase CLI ile projeyi bağlayıp fonksiyonu yayınla (veya Dashboard'daki Edge Functions editörüne iki fonksiyon dosyasını birlikte ekle):
+4. VAPID anahtarlarını üret, Supabase projesini bağla ve fonksiyonları dağıt:
 
 ```sh
+node scripts/generate-vapid.mjs
 supabase login
 supabase link --project-ref YOUR_PROJECT_REF
 supabase secrets set --env-file .env.push
 supabase functions deploy set-status
+supabase functions deploy poke
 ```
 
-`APP_ORIGIN=https://doruksayn.github.io` olmalı; origin içine `/uygun/` yolu eklenmez. `VAPID_SUBJECT` geçerli bir HTTPS iletişim adresi veya mailto adresi olmalıdır. `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` Supabase fonksiyon ortamında sağlanır. Fonksiyon `verify_jwt=false` kullanır ancak her isteğin Bearer token'ını `auth.getUser(token)` ile doğrular; ardından yalnızca iki üyeden biri olup olmadığını kontrol eder. Doğrulama başarısızsa hiçbir durum/veri işlemi yapılmaz.
+`.env.push` Git tarafından yok sayılır. Özel VAPID anahtarı yalnızca Supabase secrets içinde kalmalı; `public/config.js` veya GitHub Actions değişkenlerine koyma. `SUPABASE_URL` ve `SUPABASE_SERVICE_ROLE_KEY` Edge Functions ortamında Supabase tarafından sağlanır.
 
-7. GitHub → Settings → Secrets and variables → Actions → Variables bölümüne üç PUBLIC değeri ekle:
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY` (anon JWT veya publishable key; service_role / secret key ASLA değil)
-   - `VAPID_PUBLIC_KEY`
-8. Settings → Pages → Source olarak GitHub Actions seç. Actions'tan Publish Uygun akışını çalıştır veya main'e push yap. Eksik değişkenlerle akış bilerek hata verir; yanlışlıkla demo yayınlamaz.
-9. Beklenen adres: https://doruksayn.github.io/uygun/ (ancak başarılı dağıtımdan sonra açılır).
+### GitHub Pages
 
-### İki saatlik hatırlatma
+GitHub deposunda **Settings → Secrets and variables → Actions → Variables** bölümüne şu public değerleri ekle:
 
-`supabase/migrations/202610010001_available_reminders.sql` dosyasını çalıştır, `remind-available` Edge Function'ını yayınla ve Supabase Edge Function Secrets'e rastgele güçlü bir `REMINDER_TOKEN` ekle. Aynı token'ı, proje URL'sini ve uygulamanın public API key'ini Supabase Vault'ta sırasıyla `reminder_token`, `project_url` ve `publishable_key` adlarıyla sakla. Son olarak `supabase/schedule-reminders.sql` dosyasını bir kez SQL Editor'de çalıştır. Cron her 5 dakikada bir iki saati dolmuş `uygun` durumlarını kontrol eder; hatırlatma kişinin kendi kayıtlı cihazlarına gider.
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY` (anon veya publishable key; `service_role` ya da secret key değil)
+- `VAPID_PUBLIC_KEY`
 
-Yerelde canlı modu denemek için `public/config.js` içindeki üç PUBLIC alanı doldur veya ortam değişkenlerini tanımlayıp build al. Özel anahtarları hiçbir zaman bu dosyaya yazma. `.env` dosyaları otomatik okunmaz; build ortam değişkenlerini kullanır.
+**Settings → Pages → Build and deployment → GitHub Actions** seç. `main` dalına gönderim Pages dağıtımını başlatır. Canlı adres: <https://doruksayn.github.io/UYGUN/>.
+
+`APP_ORIGIN` yalnızca `https://doruksayn.github.io` olmalı; sonuna `/UYGUN/` ekleme. Uygulama içindeki dosya yolları göreli olduğu için repo adının büyük harfli olması çalışmayı etkilemez.
+
+### İsteğe bağlı: iki saatlik hatırlatma
+
+Supabase Function Secrets'e güçlü bir `REMINDER_TOKEN` ekle. Aynı token'ı Supabase Vault'ta `reminder_token` adıyla sakla; proje URL'sini ve public API key'ini de `project_url` ve `publishable_key` adlarıyla Vault'a ekle. `supabase/schedule-reminders.sql` dosyasını SQL Editor'de bir kez çalıştır ve fonksiyonu dağıt:
+
+```sh
+supabase functions deploy remind-available
+```
 
 ## Güvenlik ve davranış
 
-- En fazla iki üye: veritabanındaki benzersiz slot yalnızca 1 veya 2 olabilir.
-- Anonymous kullanıcılar durumu okuyamaz. Giriş yapmış ama üye olmayan hesaplar da okuyamaz.
-- İstemci üyeleri veya durum alanını doğrudan değiştiremez. Sunucu doğrulanmış kimlik üzerinden yalnızca kendi durumunu değiştirir.
-- Bildirim abonelikleri yalnızca sahipleri tarafından okunup değiştirilebilir.
-- Bildirim yalnızca false → true geçişinde denenir. Aynı değerin tekrar gönderilmesi yeni bildirim üretmez. Sunucu kilidi ve 60 saniyelik aralık hızlı tekrarları sınırlar.
-- Bildirim gönderimi başarısız olsa da kaydedilen durum korunur. İlk sürüm otomatik bildirim yeniden deneme kuyruğu içermez; UI gönderim hatasını bildirir.
-- `Uygunum` iki saat açık kalırsa kişinin kendi cihazına `Uygun musun?` hatırlatması gönderilir; hatırlatma aralığı tekrar iki saattir.
-- Geçersiz push abonelikleri temizlenir; sunucu yalnızca bilinen HTTPS push servislerine istek gönderir.
-- Çıkış, hesabın tüm cihazlardaki bildirim aboneliklerini siler. Diğer cihazlarda gerekirse kapat/aç yaparak tekrar etkinleştir.
-- Çevrimdışıyken durum değiştirilemez; gösterilen bilgi son alınan durumdur. Ekrana dönüşte ve 30 saniyede bir veri yeniden alınır.
-- iPhone: iOS 16.4+, Ana Ekrana Ekle, uygulamayı ikonundan aç, Bildirimleri aç. Android: desteklenen tarayıcı ve bildirim izni. İnternet, pil ve odak ayarları teslimatı etkiler.
-- Service worker yalnızca push işler; kişisel durum verileri çevrimdışı önbelleğe alınmaz.
+- Sistemde en fazla iki üye bulunur; yalnızca bu üyeler birbirinin durumunu görebilir.
+- Sunucu istek sahibini doğrular; durum ve üyelik bilgileri istemciden doğrudan değiştirilemez.
+- Durum bildirimi yalnızca durum gerçekten değiştiğinde gönderilir.
+- Push abonelikleri kullanıcıya özeldir; çıkışta hesabın cihaz abonelikleri silinir.
+- Çevrimdışıyken durum değiştirilemez. Kişisel durum bilgileri service worker önbelleğine alınmaz.
+- Dürtme aralığı veritabanında uygulanır; hızlı istekler sınırı aşamaz.
 
-## Yayına çıkmadan kontrol
+## Yayın öncesi kontrol
 
-- İki ayrı cihaz/hesapla giriş; birindeki geçiş diğerinde yenilemesiz görünmeli.
-- Uygulamalar kapalıyken false → true geçişi: yalnızca arkadaşın bildirim almalı.
-- true → false, aynı durumun tekrarı ve 60 saniye içindeki hızlı geçişler bildirim yağmuru oluşturmamalı.
-- Bildirimleri kapatınca ve çıkıştan sonra yeni bildirim gelmemeli.
-- Oturumsuz istek, üçüncü kullanıcı, başka kullanıcı kimliği gönderen istek reddedilmeli.
-- İnternet kesilince hatalı başarı gösterilmemeli; yeniden açılınca güncel durum alınmalı.
+- İki ayrı hesapla giriş yap; durumun diğer ekranda yenileme olmadan göründüğünü kontrol et.
+- Uygun ve uygun değil durumlarında bildirimleri, ardından dürtme bekleme süresini dene.
+- Bildirim izni ve çıkış akışlarını iki cihazda kontrol et; oturumsuz ve üçüncü kullanıcı isteklerinin reddedildiğini doğrula.
 
-Doğrulananlar: yerel ve CI testleri, başarılı Pages dağıtımı, canlı giriş, iki açık tarayıcı sekmesinde yenilemesiz eşitleme ve kalıcı durum, anonim veri okuma ve fonksiyon erişiminin reddi, CORS, kapalı kayıt. `tests/access.sql` canlı veritabanında çalıştırıldı: iki üyenin birbirini görmesi, dış kullanıcının veri görememesi ve ayrıcalıklı RPC erişiminin kapalı olması doğrulandı. Telefon bildiriminin gerçek teslimatı henüz doğrulanmadı.
+CI, `node --test` komutunu çalıştırıp derlemeden sonra Pages'i yayınlar. Erişim kontrolleri için `tests/access.sql` kullanılabilir. Gerçek telefonlarda push teslimatı henüz doğrulanmadı.

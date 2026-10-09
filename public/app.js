@@ -7,7 +7,7 @@ const stamp = value => value ? `Son değişiklik: ${new Date(value).toLocaleStri
 function renderPoke() {
   const seconds = Math.max(0, Math.ceil((cooldownUntil - Date.now()) / 1000));
   $('poke').disabled = busy || seconds > 0 || !navigator.onLine;
-  $('poke-countdown').textContent = seconds ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}` : 'Dürt';
+  $('poke-countdown').textContent = seconds ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}` : '';
 }
 function render() {
   const mine = rows.find(r => r.user_id === user?.id);
