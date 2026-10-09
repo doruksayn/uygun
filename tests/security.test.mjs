@@ -23,5 +23,5 @@ test('pokes enforce a database cooldown and notify only after membership verific
   assert.match(migration,/using \(user_id = \(select auth\.uid\(\)\)/);
   assert.ok(endpoint.indexOf('admin.auth.getUser(token)') < endpoint.indexOf("admin.rpc('claim_poke'"));
   assert.match(endpoint,/trustedPushEndpoint\(sub\.endpoint\)/);
-  assert.match(endpoint,/seni dürtüyor!/);
+  assert.match(endpoint,/seni BIZZLATTI/);
 });
